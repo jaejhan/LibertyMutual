@@ -252,6 +252,10 @@ runXgbTuning <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE) {
       train <- getOneWayVars_retTrain(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
       validation <- getOneWayVars_retTest(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
       
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
+      
       # Create xgboost class sparse matrices
       train_predictors <- train[, all.vars(model)[-1]]  # select predictor var columns
       train_predictors <- sparse.model.matrix(~., data = train_predictors)  
@@ -321,9 +325,8 @@ runXgbTuning_par1 <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE, co
   }
   
   collector <- foreach (i=1:nrow(xgbGrid), .combine='comb', .multicombine=TRUE) %dopar% {
+    validation_collect <- NULL
     eval_metric_cv <- foreach (j=1:folds, .combine='c') %do% {
-      
-      validation_collect <- NULL
       
       # Train the model
       train <- subset(data, !(cv_var %in% j))
@@ -346,6 +349,9 @@ runXgbTuning_par1 <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE, co
       
       train <- getOneWayVars_retTrain(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
       validation <- getOneWayVars_retTest(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
       
       # Create xgboost class sparse matrices
       train_predictors <- train[, all.vars(model)[-1]]  # select predictor var columns
@@ -374,6 +380,8 @@ runXgbTuning_par1 <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE, co
       validation_predictors <- validation[, all.vars(model)[-1]]  # select predictor var columns
       validation_predictors <- sparse.model.matrix(~., data = validation_predictors)  
       validation$score_xgb <- predict(xgbModel, xgb.DMatrix(data=validation_predictors))
+      
+      validation_collect <- rbind(validation_collect, validation)
       
       ngini(validation[, all.vars(model)[1]], validation$score_xgb)
     }    
@@ -451,6 +459,10 @@ runXgbTuning_par2 <- function(xgbGrid, data, model, obj, cv_fold, numSteps=0, st
       
       train <- getOneWayVars_retTrain(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
       validation <- getOneWayVars_retTest(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
       
       # Create xgboost class sparse matrices
       train_predictors <- train[, all.vars(model)[-1]]  # select predictor var columns
@@ -649,9 +661,8 @@ runGbmTuning_par1 <- function(gbmGrid, data, model, distrib, var.monotone, cv_fo
   }
   
   collector <- foreach (i=1:nrow(gbmGrid), .combine='comb', .multicombine=TRUE) %dopar% {
+    validation_collect <- NULL
     eval_metric_cv <- foreach (j=1:folds, .combine='c') %do% {
-      
-      validation_collect <- NULL
       
       # Train the model
       train <- subset(data, !(cv_var %in% j))
@@ -707,20 +718,16 @@ runGbmTuning_par1 <- function(gbmGrid, data, model, distrib, var.monotone, cv_fo
     
     list(
       data.frame(
-        #distrib = gbmGrid$distrib[i],  
         bag.fraction = gbmGrid$bag.fraction[i],  
         shrinkage = gbmGrid$shrinkage[i], 
         interaction.depth = gbmGrid$interaction.depth[i],  
         n.minobsinnode = gbmGrid$n.minobsinnode[i],  
         trees = gbmGrid$trees[i], 
-        cred = gbmGrid$cred_T1_V8[i], 
-        rand = gbmGrid$rand_T1_V8[i], 
         eval_metric_final=eval_metric_final[i]),
       data.frame(varImp),
       data.frame(validation_collect)
     )
   }
-  stopImplicitCluster()
   
   tune_results <- as.data.frame(collector[1])
   tune_results <- arrange(tune_results, desc(eval_metric_final))
@@ -893,6 +900,19 @@ runRfTuning <- function(rfGrid, data, model, cv_fold, alert=TRUE) {
       train <- subset(data, !(cv_var %in% j))
       validation <- subset(data, cv_var %in% j)
       
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=5, rand=0.2)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=5, rand=0.2)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
+      
       set.seed(2)
 
       rfModel <<- randomForest(formula = model,
@@ -954,9 +974,8 @@ runRfTuning_par1 <- function(rfGrid, data, model, cv_fold, alert=TRUE, cores=4) 
   }
   
   collector <- foreach (i=1:nrow(rfGrid), .combine='comb', .multicombine=TRUE) %dopar% {
+    validation_collect <- NULL
     eval_metric_cv <- foreach (j=1:folds, .combine='c') %do% {
-      
-      validation_collect <- NULL
       
       # Train the model
       train <- subset(data, !(cv_var %in% j))
@@ -1011,13 +1030,11 @@ runRfTuning_par1 <- function(rfGrid, data, model, cv_fold, alert=TRUE, cores=4) 
       data.frame(validation_collect)
     )
   }
-  stopImplicitCluster()
   
   tune_results <- as.data.frame(collector[1])
   tune_results <- arrange(tune_results, desc(eval_metric_final))
   View(tune_results)
   
-   
   varImp <- as.data.frame(collector[2])
   getRfTuningParamPlots(tune_results, varImp)  # Visualize results
   
@@ -1025,7 +1042,7 @@ runRfTuning_par1 <- function(rfGrid, data, model, cv_fold, alert=TRUE, cores=4) 
   varImp_rfo <<- varImp
   
   validation_rfo <<- as.data.frame(collector[3])
-
+  
   if (alert) beep(10)
   
   return(tune_results)
@@ -1119,9 +1136,8 @@ runGntTuning_par <- function(gntGrid, data, model, family, cv_fold, alert=TRUE, 
   }
   
   collector <- foreach (i=1:nrow(gntGrid), .combine='comb', .multicombine=TRUE) %dopar% {
+    validation_collect <- NULL
     eval_metric_cv <- foreach (j=1:folds, .combine='c') %do% {
-      
-      validation_collect <- NULL
       
       # Train the model
       train <- subset(data, !(cv_var %in% j))
@@ -1284,9 +1300,8 @@ runEtTuning_par <- function(etGrid, data, model, cv_fold, alert=TRUE, cores=4) {
   }
   
   collector <- foreach (i=1:nrow(etGrid), .combine='comb', .multicombine=TRUE) %dopar% {
+    validation_collect <- NULL
     eval_metric_cv <- foreach (j=1:folds, .combine='c') %do% {
-      
-      validation_collect <- NULL
       
       # Train the model
       train <- subset(data, !(cv_var %in% j))
@@ -1378,7 +1393,7 @@ getXgbTuningParamPlots <- function(data, data2) {
     )
   
   Nround <- ggplot() +
-    geom_point(data=data, aes(x=nround, y=eval.metric)) +
+    geom_point(data=data, aes(x=nround, y=eval.metric), alpha=0.33) +
     geom_point(data=summNround, aes(x=nround, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$nround)) +
     ggtitle('Nround vs. eval metric\n(Median values in bold)') +
@@ -1396,7 +1411,7 @@ getXgbTuningParamPlots <- function(data, data2) {
     )
   
   Subsample <- ggplot() +
-    geom_point(data=data, aes(x=subsample, y=eval.metric)) +
+    geom_point(data=data, aes(x=subsample, y=eval.metric), alpha=0.33) +
     geom_point(data=summSubsample, aes(x=subsample, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$subsample)) +
     ggtitle('Subsample vs. eval metric\n(Median values in bold)') +
@@ -1414,7 +1429,7 @@ getXgbTuningParamPlots <- function(data, data2) {
     )
   
   Eta <- ggplot() +
-    geom_point(data=data, aes(x=eta, y=eval.metric)) +
+    geom_point(data=data, aes(x=eta, y=eval.metric), alpha=0.33) +
     geom_point(data=summEta, aes(x=eta, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$eta)) +
     ggtitle('Eta vs. eval metric\n(Median values in bold)') +
@@ -1432,7 +1447,7 @@ getXgbTuningParamPlots <- function(data, data2) {
     )
   
   Max.depth <- ggplot() +
-    geom_point(data=data, aes(x=max.depth, y=eval.metric)) +
+    geom_point(data=data, aes(x=max.depth, y=eval.metric), alpha=0.33) +
     geom_point(data=summMax.depth, aes(x=max.depth, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$max.depth)) +
     ggtitle('Max.depth vs. eval metric\n(Median values in bold)') +
@@ -1450,7 +1465,7 @@ getXgbTuningParamPlots <- function(data, data2) {
     )
   
   Min.child.weight <- ggplot() +
-    geom_point(data=data, aes(x=min.child.weight, y=eval.metric)) +
+    geom_point(data=data, aes(x=min.child.weight, y=eval.metric), alpha=0.33) +
     geom_point(data=summMin.child.weight, aes(x=min.child.weight, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$min.child.weight)) +
     ggtitle('Min.child.weight vs. eval metric\n(Median values in bold)') +
@@ -1468,7 +1483,7 @@ getXgbTuningParamPlots <- function(data, data2) {
     )
   
   Colsample_bytree <- ggplot() +
-    geom_point(data=data, aes(x=colsample_bytree, y=eval.metric)) +
+    geom_point(data=data, aes(x=colsample_bytree, y=eval.metric), alpha=0.33) +
     geom_point(data=summColsample_bytree, aes(x=colsample_bytree, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$colsample_bytree)) +
     ggtitle('Colsample_bytree vs. eval metric\n(Median values in bold)') +
@@ -1479,14 +1494,14 @@ getXgbTuningParamPlots <- function(data, data2) {
     theme(plot.title = element_text(size=20))
   
   # Variable importance
-  summImportance <<- data2 %>%
+  summImportance <- data2 %>%
     group_by(var) %>%
     summarise(
       medImportance = median(importance)
     )
   
   Importance <- ggplot() +  
-    geom_point(data=data2, aes(x=var, y=importance)) + 
+    geom_point(data=data2, aes(x=var, y=importance), alpha=0.33) + 
     geom_point(data=summImportance, aes(x=var, y=medImportance), size=5) +
     ggtitle('Relative infleunce\n(Median values in bold)') +
     theme(axis.title.x = element_text(size=18)) +
@@ -1527,7 +1542,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     ) 
   
   shrinkage <- ggplot() +
-    geom_point(data=data, aes(x=shrinkage, y=eval.metric)) + 
+    geom_point(data=data, aes(x=shrinkage, y=eval.metric), alpha=0.33) + 
     geom_point(data=summShrinkage, aes(x=shrinkage, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$shrinkage)) +
     ggtitle('Shrinkage vs. eval metric\n(Median values in bold)') +
@@ -1545,7 +1560,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   Trees <- ggplot() +
-    geom_point(data=data, aes(x=trees, y=eval.metric)) +
+    geom_point(data=data, aes(x=trees, y=eval.metric), alpha=0.33) +
     geom_point(data=summTrees, aes(x=trees, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$trees)) +
     ggtitle('Trees vs. eval metric\n(Median values in bold)') +
@@ -1563,7 +1578,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   intDepth <- ggplot() +
-    geom_point(data=data, aes(x=interaction.depth, y=eval.metric)) +
+    geom_point(data=data, aes(x=interaction.depth, y=eval.metric), alpha=0.33) +
     geom_point(data=summIntDepth, aes(x=interaction.depth, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$interaction.depth)) +
     ggtitle('Interaction depth vs. eval metric\n(Median values in bold)') +
@@ -1581,7 +1596,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   obsNodes <- ggplot() +  
-    geom_point(data=data, aes(x=n.minobsinnode, y=eval.metric)) + 
+    geom_point(data=data, aes(x=n.minobsinnode, y=eval.metric), alpha=0.33) + 
     geom_point(data=summMinobs, aes(x=n.minobsinnode, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$n.minobsinnode)) + 
     ggtitle('Min Obs in Terminal Nodes vs. eval metric\n(Median values in bold)') +
@@ -1599,7 +1614,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   bagFraction <- ggplot() +  
-    geom_point(data=data, aes(x=bag.fraction, y=eval.metric)) + 
+    geom_point(data=data, aes(x=bag.fraction, y=eval.metric), alpha=0.33) + 
     geom_point(data=summBagfraction, aes(x=bag.fraction, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$bag.fraction)) + 
     ggtitle('Bag fraction vs. eval metric\n(Median values in bold)') +
@@ -1617,7 +1632,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   influence <- ggplot() +  
-    geom_point(data=data2, aes(x=var, y=rel.inf)) + 
+    geom_point(data=data2, aes(x=var, y=rel.inf), alpha=0.33) + 
     geom_point(data=summRelinf, aes(x=var, y=medRelInf), size=5) +
     ggtitle('Relative infleunce\n(Median values in bold)') +
     theme(axis.title.x = element_text(size=18)) +
@@ -1656,7 +1671,7 @@ getRfTuningParamPlots <- function(data, data2) {
     )
   
   Trees <- ggplot() +
-    geom_point(data=data, aes(x=trees, y=eval.metric)) +
+    geom_point(data=data, aes(x=trees, y=eval.metric), alpha=0.33) +
     geom_point(data=summTrees, aes(x=trees, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$trees)) +
     ggtitle('Trees vs. eval metric\n(Median values in bold)') +
@@ -1674,7 +1689,7 @@ getRfTuningParamPlots <- function(data, data2) {
     )
   
   Mtry <- ggplot() +
-    geom_point(data=data, aes(x=mtry, y=eval.metric)) +
+    geom_point(data=data, aes(x=mtry, y=eval.metric), alpha=0.33) +
     geom_point(data=summMtry, aes(x=mtry, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$mtry)) +
     ggtitle('Mtry vs. eval metric\n(Median values in bold)') +
@@ -1692,7 +1707,7 @@ getRfTuningParamPlots <- function(data, data2) {
     )
   
   Nodesize <- ggplot() +
-    geom_point(data=data, aes(x=nodesize, y=eval.metric)) +
+    geom_point(data=data, aes(x=nodesize, y=eval.metric), alpha=0.33) +
     geom_point(data=summNodesize, aes(x=nodesize, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$nodesize)) +
     ggtitle('Nodesize vs. eval metric\n(Median values in bold)') +
@@ -1710,7 +1725,7 @@ getRfTuningParamPlots <- function(data, data2) {
     )
   
   Maxnodes <- ggplot() +
-    geom_point(data=data, aes(x=maxnodes, y=eval.metric)) +
+    geom_point(data=data, aes(x=maxnodes, y=eval.metric), alpha=0.33) +
     geom_point(data=summMaxnodes, aes(x=maxnodes, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$maxnodes)) +
     ggtitle('Maxnodes vs. eval metric\n(Median values in bold)') +
@@ -1728,7 +1743,7 @@ getRfTuningParamPlots <- function(data, data2) {
     )
   
   Sampsize <- ggplot() +
-    geom_point(data=data, aes(x=sampsize, y=eval.metric)) +
+    geom_point(data=data, aes(x=sampsize, y=eval.metric), alpha=0.33) +
     geom_point(data=summSampsize, aes(x=sampsize, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$sampsize)) +
     ggtitle('Sampsize vs. eval metric\n(Median values in bold)') +
@@ -1748,7 +1763,7 @@ getRfTuningParamPlots <- function(data, data2) {
     )
   
   Replace <- ggplot() +
-    geom_point(data=data, aes(x=replace2, y=eval.metric)) +
+    geom_point(data=data, aes(x=replace2, y=eval.metric), alpha=0.33) +
     geom_point(data=summReplace, aes(x=replace2, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$replace2)) +
     ggtitle('Replace vs. eval metric\n(Median values in bold)') +
@@ -1766,7 +1781,7 @@ getRfTuningParamPlots <- function(data, data2) {
     )
   
   Importance <- ggplot() +  
-    geom_point(data=data2, aes(x=var, y=importance)) + 
+    geom_point(data=data2, aes(x=var, y=importance), alpha=0.33) + 
     geom_point(data=summImportance, aes(x=var, y=medImportance), size=5) +
     ggtitle('Relative infleunce\n(Median values in bold)') +
     theme(axis.title.x = element_text(size=18)) +
@@ -1807,7 +1822,7 @@ getEtTuningParamPlots <- function(data) {
     )
   
   Trees <- ggplot() +
-    geom_point(data=data, aes(x=trees, y=eval.metric)) +
+    geom_point(data=data, aes(x=trees, y=eval.metric), alpha=0.33) +
     geom_point(data=summTrees, aes(x=trees, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$trees)) +
     ggtitle('Trees vs. log loss\n(Median values in bold)') +
@@ -1825,7 +1840,7 @@ getEtTuningParamPlots <- function(data) {
     )
   
   Mtry <- ggplot() +
-    geom_point(data=data, aes(x=mtry, y=eval.metric)) +
+    geom_point(data=data, aes(x=mtry, y=eval.metric), alpha=0.33) +
     geom_point(data=summMtry, aes(x=mtry, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$mtry)) +
     ggtitle('Mtry vs. log loss\n(Median values in bold)') +
@@ -1843,7 +1858,7 @@ getEtTuningParamPlots <- function(data) {
     )
   
   Nodesize <- ggplot() +
-    geom_point(data=data, aes(x=nodesize, y=eval.metric)) +
+    geom_point(data=data, aes(x=nodesize, y=eval.metric), alpha=0.33) +
     geom_point(data=summNodesize, aes(x=nodesize, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$nodesize)) +
     ggtitle('Nodesize vs. log loss\n(Median values in bold)') +
@@ -1861,7 +1876,7 @@ getEtTuningParamPlots <- function(data) {
     )
   
   NumRandomCuts <- ggplot() +
-    geom_point(data=data, aes(x=numRandomCuts, y=eval.metric)) +
+    geom_point(data=data, aes(x=numRandomCuts, y=eval.metric), alpha=0.33) +
     geom_point(data=summNumRandomCuts, aes(x=numRandomCuts, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$numRandomCuts)) +
     ggtitle('NumRandomCuts vs. log loss\n(Median values in bold)') +

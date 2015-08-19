@@ -14,6 +14,10 @@ test <- read.csv('data/test.csv', stringsAsFactors=TRUE)
 
 # Add features ----
 train <- makeNumeric(train, c('T1_V1', 'T1_V2', 'T1_V3', 'T1_V10', 'T1_V13', 'T1_V14', 'T2_V1', 'T2_V2', 'T2_V4', 'T2_V6', 'T2_V7', 'T2_V8', 'T2_V9', 'T2_V10', 'T2_V14', 'T2_V15'))
+train$T1_V4N_ind <- ifelse(train$T1_V4 == 'N', 1, 0)
+test$T1_V4N_ind <- ifelse(test$T1_V4 == 'N', 1, 0)
+
+
 
 # Shuffle data & add CV folds
 set.seed(2015); train <- train[sample(nrow(train)), ]  # Shuffle data in case ordering leads to biased cross-validation
@@ -24,7 +28,7 @@ train$cvFold <- ntile(train$rowid, 2)
 # summStats_train <- getSummaryStats(train, names(train), yvar='Hazard', export=TRUE); summStats_test <- getSummaryStats(test, names(test), yvar='none', export=TRUE)
 # freq_train <- getFactorFreqs(train, names(train), yvar='Hazard', export=TRUE); freq_test <- getFactorFreqs(test, names(test), yvar='none', export=TRUE) 
 # hist(train$Hazard)
-# rpivotTable(train)
+rpivotTable(train)
 # ggvis(train, x=~Hazard)
 # 
 # M <- cor(train[sapply(train, function(x) !is.factor(x))])
@@ -55,11 +59,6 @@ e03 <- as.formula('Hazard ~ T1_V8 + T1_V1 + T1_V4 + T1_V2 + T1_V11_HazardRate + 
                   T2_V6 + T2_V8 + T2_V5 + T1_V9 + T2_V11 + T1_V17 + T2_V3 + T1_V6 + T2_V12')
 constraints03 <- c(0, 0, 0, 0, 1, -1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 train$logHazard <- log(train$Hazard)
-e03b <- as.formula('logHazard ~ T1_V8 + T1_V1 + T1_V4 + T1_V2 + T1_V11_HazardRate + T2_V1  + T1_V5_HazardRate + 
-                  T2_V2 + T1_V12_HazardRate + T2_V9 + T1_V16_HazardRate + T2_V15 + T2_V4 +  
-                  T2_V13 + T1_V3 + T1_V15_HazardRate + T1_V7_HazardRate + T2_V14 + T1_V14 +  
-                  T2_V6 + T2_V8 + T2_V5 + T1_V9 + T2_V11 + T1_V17 + T2_V3 + T1_V6 + T2_V12')
-
 
 e04 <- as.formula('Hazard ~ T1_V8 + T1_V1 + T1_V4 + T1_V2 + T1_V11 + T2_V1  + T1_V5 + 
                   T2_V2 + T1_V12 + T2_V9 + T1_V16 + T2_V15 + T2_V4 +  
@@ -72,23 +71,27 @@ e05 <- as.formula('log(Hazard) ~ T1_V8 + T1_V1 + T1_V4 + T1_V2 + T1_V11_HazardRa
                   T2_V6 + T2_V8 + T2_V5 + T1_V9 + T2_V11 + T1_V17 + T2_V3 + T1_V6 + T2_V12')
 
 
+e06 <- as.formula('Hazard ~ T1_V8 + T1_V1 + T1_V4 + T1_V2 + T1_V11_HazardRate + T2_V1  + T1_V5_HazardRate + 
+                   T2_V2 + T1_V12_HazardRate + T2_V9 + T1_V16_HazardRate + T2_V15 + T2_V4 +  
+                   T2_V13 + T1_V3 + T1_V15_HazardRate + T1_V7_HazardRate + T2_V14 + T1_V14 +  
+                   T2_V6 + T2_V8 + T2_V5 + T1_V9 + T2_V11 + T1_V17 + T2_V3 + T1_V6 + T2_V12')
+
 ############################################################################################################
 # Tune models
 # Tune XGB
 
 
 system.time({
-  xgbGrid <- expand.grid(nround = c(650), 
-                         subsample = c(0.65), # 0.7
-                         eta = c(0.01),  # 0.005
-                         max.depth = c(9),  # 9
-                         min.child.weight = c(75),  # 6
-                         colsample_bytree = c(0.65) # 0.7
-  )
-  
+xgbGrid <- expand.grid(nround = c(65), 
+                       subsample = c(0.65), # 0.7
+                       eta = c(0.01),  # 0.005
+                       max.depth = c(9),  # 9
+                       min.child.weight = c(75),  # 6
+                       colsample_bytree = c(0.65)) # 0.7
+                      
 #tune_results_xgb <- runXgbTuning(xgbGrid, train, model=e03, obj='reg:linear', cv_fold='cvFold', alert=TRUE) 
 #tune_results_xgb <- runXgbTuning_par1(xgbGrid, train, model=e03, obj='reg:linear', cv_fold='cvFold', cores=6, alert=TRUE) 
-tune_results_xgb <- runXgbTuning_par2(xgbGrid, train, model=e03b, obj='count:poisson', numSteps=10, stepSize=50, cv_fold='cvFold', cores=7, alert=TRUE) 
+tune_results_xgb <- runXgbTuning_par2(xgbGrid, train, model=e03, obj='reg:linear', numSteps=0, stepSize=50, cv_fold='cvFold', cores=2, alert=TRUE) 
 })
 
 tune_results_xgb_2=filter(tune_results_xgb, nround>=550, min.child.weight==75)
@@ -98,18 +101,17 @@ getXgbTuningParamPlots(tune_results_xgb_2, varImp_xgb_2)
 # Tune GBM
 
 system.time({
-
 gbmGrid <- expand.grid(bag.fraction = c(0.7),
                        shrinkage = c(0.01), 
                        interaction.depth = c(13), 
                        n.minobsinnode = c(100),
-                       trees = c(2300)
-                       )
-  
-tune_results_gbm <- runGbmTuning_par1(gbmGrid, train, model=e03, var.monotone=constraints03, distrib='poisson', cv_fold='cvFold', alert=T, cores=4) 
-#tune_results_gbm <- runGbmTuning_par2(gbmGrid, train, model=e06, var.monotone=constraints04, distrib='poisson', cv_fold='cvFold', numSteps=0, stepSize=0, alert=T, cores=2) 
+                       trees = c(2300))
+                       
+tune_results_gbm <- runGbmTuning(gbmGrid, train, model=e03, var.monotone=constraints03, distrib='poisson', cv_fold='cvFold', alert=T) 
+#tune_results_gbm <- runGbmTuning_par1(gbmGrid, train, model=e03, var.monotone=constraints03, distrib='poisson', cv_fold='cvFold', alert=T, cores=4) 
+#tune_results_gbm <- runGbmTuning_par2(gbmGrid, train, model=e03, var.monotone=constraints03, distrib='poisson', cv_fold='cvFold', numSteps=0, stepSize=0, alert=T, cores=2) 
 })
-test <- runGBM(train, test, model=e02, var.monotone=constraints02, distrib='poisson', bag=0.7, trees=2300, shrnkg=0.01, idepth=13, minobs=200)
+
 
 # tune_results_gbm <- runGbmTuning_par2(gbmGrid, train, model=e02, var.monotone=constraints02, distrib='poisson', numSteps=0, stepSize=100, cv_fold='cvFold', alert=T, cores=4) 
 getPDplots_scaled(gbmModel, varList=c('T1_V5_HazardRate'), n.trees=2300, validation_gbm)
@@ -124,17 +126,15 @@ write.csv(validation_collect, file='data/validation_collect.csv');
 
 # Tune Random forests
 system.time({
-
-rfGrid <- expand.grid(trees = c(1000), 
+rfGrid <- expand.grid(trees = c(15), 
                       mtry = c(6), 
-                      maxnodes = c(50, 75, 100),
-                      nodesize = c(300, 500, 700),
+                      maxnodes = c(50),
+                      nodesize = c(300),
                       sampsize = c(15000),
-                      replace = c(TRUE)
-                      )
-#tune_results_rfo <- runRfTuning_par1(rfGrid, train, model=e05, cv_fold='cvFold', alert=T, cores=6)                                                     
+                      replace = c(TRUE))
+                      
+#tune_results_rfo <- runRfTuning(rfGrid, train, model=e05, cv_fold='cvFold', alert=T)                                               
 tune_results_rfo <- runRfTuning_par1(rfGrid, train, model=e05, cv_fold='cvFold', alert=T, cores=4)                                                   
-
 })
 
 tune_results_rfo_2=subset(tune_results_rfo, nodesize == 300)
@@ -148,15 +148,19 @@ gntGrid <- expand.grid(alpha = c(0.5),
 
 tune_results_gnt <- runGntTuning(gntGrid, train, model=e20, family='binomial', cv_fold='cvFold') 
 
+# Save
+save(validation_gbm, file='data/validation_gbm.RData')
+save(validation_rfo, file='data/validation_rfo.RData')
+save(validation_xgb, file='data/validation_xgb.RData')
 
 # Ensemble (CV score)
-validation_rfo <- validation_rfo[, c('enrollment_id', 'score_rfo')]
-validation_xgb <- validation_xgb[, c('enrollment_id', 'score_xgb')]
-#validation_gnt <- validation_gnt[, c('enrollment_id', 'score_gnt')]
+validation_rfo <- validation_rfo[, c('Id', 'score_rfo')]
+validation_xgb <- validation_xgb[, c('Id', 'score_xgb')]
+#validation_gnt <- validation_gnt[, c('Id', 'score_gnt')]
 
-train_ensemble <- left_join(validation_gbm, validation_rfo, by='enrollment_id')
-#train_ensemble <- left_join(train_ensemble, validation_gnt, by='enrollment_id')
-train_ensemble <- left_join(train_ensemble, validation_xgb, by='enrollment_id')
+train_ensemble <- left_join(validation_gbm, validation_rfo, by='Id')
+train_ensemble <- left_join(train_ensemble, validation_xgb, by='Id')
+
 
 train_ensemble$score_ensemble <- (0.65 * train_ensemble$score_gbm) + 
                                  (0.1 * train_ensemble$score_rfo) +
@@ -166,9 +170,20 @@ train_ensemble$score_ensemble <- (0.65 * train_ensemble$score_gbm) +
 train_ensemble01 <- subset(train_ensemble, cvFold == 1)
 train_ensemble02 <- subset(train_ensemble, cvFold == 2)
 
-auc_train1 <- Metrics::auc(train_ensemble01$dropped, train_ensemble01$score_ensemble) 
-auc_train2 <- Metrics::auc(train_ensemble02$dropped, train_ensemble02$score_ensemble) 
-mean(c(auc_train1, auc_train2))
+ngini_train1 <- ngini(train_ensemble01$Hazard, train_ensemble01$score_ensemble) 
+ngini_train2 <- ngini(train_ensemble02$Hazard, train_ensemble02$score_ensemble) 
+mean(c(ngini_train1, ngini_train2))
+
+ngini(train_ensemble01$Hazard, train_ensemble01$score_gbm) 
+ngini(train_ensemble02$Hazard, train_ensemble02$score_gbm) 
+
+load(file='data/validation_rfo.RData')
+ngini(validation_rfo$Hazard[validation_rfo$cvFold==1], validation_rfo$score_rfo[validation_rfo$cvFold==1])
+ngini(train_ensemble01$Hazard, train_ensemble01$score_rfo) 
+ngini(train_ensemble02$Hazard, train_ensemble02$score_rfo) 
+
+ngini(train_ensemble01$Hazard, train_ensemble01$score_xgb) 
+ngini(train_ensemble02$Hazard, train_ensemble02$score_xgb) 
 
 # auc_summary1 <- train_ensemble01 %>% group_by(course_id) %>% summarise(AUC=Metrics::auc(dropped, score_ensemble)) %>% ungroup()
 # auc_summary2 <- train_ensemble02 %>% group_by(course_id) %>% summarise(AUC=Metrics::auc(dropped, score_ensemble)) %>% ungroup()
@@ -179,6 +194,8 @@ mean(c(auc_train1, auc_train2))
 # bb=count(train, course_id)
 # write.csv(aa, file='data/aa.csv')
 # write.csv(bb, file='data/bb.csv')
+
+
 validation_rfo <- validation_rfo[, c('enrollment_id', 'score_rfo')]
 validation_xgb <- validation_xgb[, c('enrollment_id', 'score_xgb')]
 validation_gnt <- validation_gnt[, c('enrollment_id', 'score_gnt')]
