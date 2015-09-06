@@ -1,5 +1,4 @@
-############################################################################################################
-# Exports submission file and final test dataset
+# Exports submission file and final test dataset ------------------------------
 getModelPerformance <- function(data, actual, predicted, bins, output=FALSE) {
   
   data$aa <- data[, actual]
@@ -11,7 +10,7 @@ getModelPerformance <- function(data, actual, predicted, bins, output=FALSE) {
 #   gini <- getGini(data$aa, data$pp)
 #   cat('\nGini = ', gini, sep='') 
   
-  ngini <- getNormalizedGini(data$aa, data$pp)
+  ngini <- ngini(data$aa, data$pp)
   cat('\nNorm. Gini = ', ngini, sep='') 
 
   logloss <- getRMSE(data$aa, data$pp)
@@ -71,14 +70,14 @@ if (output) {
   #plotLiftChart(data, response='aa', predicted='pp', numBins=bins, cap=FALSE, cap_pct=0)
 }
 
-############################################################################################################
-# Calculates the Gini evaluation metric
-#"NormalizedGini" is the other half of the metric. This function does most of the work, though
+
+# Calculates the Gini evaluation metric -------------------------------------------
+# "NormalizedGini" is the other half of the metric. This function does most of the work, though
 SumModelGini <- function(solution, submission) {
-  df = data.frame(solution = solution, submission = submission)
-  df <- df[order(df$submission, decreasing = TRUE),]
+  df <- data.frame(solution = solution, submission = submission)
+  df <- df[order(df$submission, decreasing = TRUE), ]
   
-  df$random = (1:nrow(df))/nrow(df)
+  df$random <- (1:nrow(df)) / nrow(df)
   
   totalPos <- sum(df$solution)
   df$cumPosFound <- cumsum(df$solution) # this will store the cumulative number of positive examples found (used for computing "Model Lorentz")
@@ -99,37 +98,8 @@ evalgini <- function(preds, dtrain) {
   return(list(metric = "Gini", value = err))
 }
 
-############################################################################################################
-# Calculates the Gini evaluation metric
-getGini <- function(a, p) {
-  if (length(a) !=  length(p)) stop("Actual and Predicted need to be equal lengths!")
-  temp.df <- data.frame(actual = a, pred = p, range=c(1:length(a)))
-  temp.df <- temp.df[order(-temp.df$pred, temp.df$range),]
-  population.delta <- 1 / length(a)
-  total.losses <- sum(a)
-  null.losses <- rep(population.delta, length(a)) 
-  accum.losses <- temp.df$actual / total.losses
-  gini.sum <- cumsum(accum.losses - null.losses)
-  sum(gini.sum) / length(a)
-}
 
-getNormalizedGini <- function(aa, pp) {
-  Gini <- function(a, p) {
-    if (length(a) !=  length(p)) stop("Actual and Predicted need to be equal lengths!")
-    temp.df <- data.frame(actual = a, pred = p, range=c(1:length(a)))
-    temp.df <- temp.df[order(-temp.df$pred, temp.df$range),]
-    population.delta <- 1 / length(a)
-    total.losses <- sum(a)
-    null.losses <- rep(population.delta, length(a)) # Hopefully is similar to accumulatedPopulationPercentageSum
-    accum.losses <- temp.df$actual / total.losses # Hopefully is similar to accumulatedLossPercentageSum
-    gini.sum <- cumsum(accum.losses - null.losses) # Not sure if this is having the same effect or not
-    sum(gini.sum) / length(a)
-  }
-  Gini(aa,pp) / Gini(aa,aa)
-}
-
-############################################################################################################
-# Calculates the RMSE (root mean squared error) evaluation metric
+# Calculates the RMSE (root mean squared error) evaluation metric --------------------------
 getRMSE <- function(actual, predicted) {
   
   RMSE <- sqrt(mean((actual - predicted)^2))
@@ -137,8 +107,8 @@ getRMSE <- function(actual, predicted) {
   return(RMSE)
 }
 
-############################################################################################################
-# Calculates the MAE (Mean Absolute Error) evaluation metric
+
+# Calculates the MAE (Mean Absolute Error) evaluation metric ---------------------------------
 getMAE <- function(actual, predicted) {
   
   MAE <- mean(abs(actual - predicted))
@@ -147,8 +117,7 @@ getMAE <- function(actual, predicted) {
 }
 
 
-############################################################################################################
-# Calculates the log loss evaluation metric
+# Calculates the log loss evaluation metric ---------------------------------
 getLogLoss <- function(actual, predicted) {
 
   logloss <- (-1/length(actual)) * sum((actual * log(predicted)) + ((1-actual)*log(1-predicted)))
@@ -157,7 +126,7 @@ getLogLoss <- function(actual, predicted) {
 }
 
 
-# Calculates the log loss evaluation metric
+# Calculates the log loss evaluation metric ---------------------------------
 getLogLoss2 <- function(actual, predicted) {
   
   logloss <- (-1/length(actual)) * sum(actual * log(predicted))
@@ -165,8 +134,8 @@ getLogLoss2 <- function(actual, predicted) {
   return(logloss)
 }
 
-############################################################################################################
-# Calculates the AUC evaluation metric
+
+# Calculates the AUC evaluation metric ---------------------------------
 getAUCSummary <- function(data, predicted, actual, output=TRUE) {
   yhat <- data[, predicted]
   y <- data[, actual]
@@ -181,8 +150,7 @@ getAUCSummary <- function(data, predicted, actual, output=TRUE) {
 }
 
 
-############################################################################################################
-# Plot Actuals vs. Predicted scatter
+# Plot Actuals vs. Predicted scatter ---------------------------------
 plotActualvPredicted <- function(data, actual, predicted, title='None', xlab='X-label', ylab='Y-label', xlim=NULL, ylim=NULL) {
   data$aa <- data[, actual]
   data$pp <- data[, predicted]
@@ -224,8 +192,8 @@ plotActualvResiduals <- function(data, actual, predicted, title='None', xlab='X-
     theme(axis.text.y = element_text(size=10))
 }
 
-############################################################################################################
-# Plot Residuals By Regressors
+
+# Plot Residuals By Regressors ---------------------------------
 plotResidualsByRegressors <- function(data, actual, predicted, regressors, title='None', xlab='X-label', ylab='Residual (Predicted - Actual)', xlim=NULL, ylim=NULL) {
   data$rr <- data[, predicted] - data[, actual] 
   
@@ -265,8 +233,7 @@ plotResidualsByRegressors <- function(data, actual, predicted, regressors, title
 }
 
 
-############################################################################################################
-# Plot Actual vs. Predictors By Regressors
+# Plot Actual vs. Predictors By Regressors ---------------------------------
 plotActualvPredictedByRegressors <- function(data, actual, predicted, regressors, bins=NULL, title='None', xlab='X-label', ylab='Total Claims', xlim=NULL, ylim=NULL) {
   
   data$aa <- data[ , actual]
@@ -317,8 +284,7 @@ plotActualvPredictedByRegressors <- function(data, actual, predicted, regressors
 }
 
 
-############################################################################################################
-# Plot % Difference By Regressors
+# Plot % Difference By Regressors ---------------------------------
 plotPctDiffByRegressors <- function(data, actual, predicted, regressors, bins=NULL, title='None', xlab='X-label', ylab='% Difference', xlim=NULL, ylim=NULL) {
   
   data$aa <- data[ , actual]
@@ -369,9 +335,7 @@ plotPctDiffByRegressors <- function(data, actual, predicted, regressors, bins=NU
 }
 
 
-
-############################################################################################################
-# Plot Boxplots By Regressors
+# Plot Boxplots By Regressors ---------------------------------
 plotClaimsBoxplotsByRegressors <- function(data, claims, regressors, bins=NULL, title='None', xlab='X-label', ylab='% Difference', xlim=NULL, ylim=NULL) {
   
   data$cc <- data[ , claims]
@@ -415,8 +379,7 @@ plotClaimsBoxplotsByRegressors <- function(data, claims, regressors, bins=NULL, 
 }
 
 
-############################################################################################################
-# Plot Boxplots By Regressors
+# Plot Boxplots By Regressors ---------------------------------
 plotScatter <- function(data, x, y, title='None', xlab='X-label', ylab='% Difference', xlim=NULL, ylim=NULL) {
   
   data$xx <- data[ , x]
@@ -458,8 +421,8 @@ plotScatter <- function(data, x, y, title='None', xlab='X-label', ylab='% Differ
   
 }
 
-############################################################################################################
-# Plots lift charts
+
+# Plots lift charts ---------------------------------
 plotLiftChart <- function(data, response, predicted, numBins, cap=TRUE, cap_pct=0) {
   # Requires dplyr
   data$response <- data[, response]  
@@ -510,206 +473,7 @@ plotLiftChart <- function(data, response, predicted, numBins, cap=TRUE, cap_pct=
 }
 
 
-
- 
- ############################################################################################################ 
- # Plots Cumulative Lift Chart
- 
- plotCumLiftChart <- function(data, response, predicted, numBins=10, cap=TRUE, cap_pct=0) {
-   # Requires dplyr
-   data$response <- data[, response]  
-   data$predicted <- data[, predicted]
-   
-   # Cap score if cap=TRUE
-   if (cap) { 
-     data$predicted[data$predicted > quantile(data$predicted, 1-cap_pct)] = quantile(data$predicted, 1-cap_pct);  # Cap predicted loss ratios
-   }
-   
-   m <- mean(data$response)
-   # Bin the data into 10 bins
-   data$scoreBin <- ntile(data$predicted, numBins)
-   #data$scoreBin = as.numeric(cut2(data$score_final, g=numBins))
-   
-   # Calculate predicted and realized probability data
-   #    predicted <- data %>%
-   #      group_by(scoreBin) %>%
-   #      summarise(stat = mean(predicted),
-   #                description=' Predicted    '
-   #      )
-   
-   actual <- data %>%
-     group_by(scoreBin) %>%
-     summarise(stat = sum(response),
-               count=n(),
-               description=' Actual Lift'
-     ) %>%
-     arrange(desc(scoreBin)) %>%
-     mutate(stat.per=(cumsum(stat)/cumsum(count))/m)
-   
-   #liftChart <<- rbind(predicted, actual)
-   print(actual)
-   
-   # Graph lift chart
-   ggplot(actual, aes(x=scoreBin, y=stat.per)) +
-     #geom_bar(position='dodge', stat='identity') +
-     geom_line() + geom_point() + geom_abline(intercept=1,slope=0,colour='red') +
-     #scale_fill_brewer(palette="Set1") +
-     ggtitle('Cumulative Lift Chart\n') +
-     xlab('\nPredicted score bins\n') +
-     ylab('Cumulative Lift Percentage\n') +
-     scale_x_continuous(breaks=1:numBins, limits=c(0, numBins+1)) +
-     scale_y_continuous(labels=percent) +
-     theme_bw() +
-     theme(plot.title = element_text(size=20)) +
-     theme(axis.title.x = element_text(size=18)) +
-     theme(axis.title.y = element_text(size=18)) +
-     theme(axis.text.x = element_text(size=14)) +
-     theme(axis.text.y = element_text(size=14)) 
-   
- }
- 
-
-############################################################################################################ 
-# Plots Gini Chart
-
-plotGiniChart <- function(data, response, predicted, numBins=10, cap=TRUE, cap_pct=0) {
-  # Requires dplyr
-  data$response <- data[, response]  
-  data$predicted <- data[, predicted]
-  
-  # Cap score if cap=TRUE
-  if (cap) { 
-    data$predicted[data$predicted > quantile(data$predicted, 1-cap_pct)] = quantile(data$predicted, 1-cap_pct);  # Cap predicted loss ratios
-  }
-  
-  s <- sum(data$response)
-  n <- length(data$response)
-  # Bin the data into 10 bins
-  data$scoreBin <- ntile(data$predicted, numBins)
-  #data$scoreBin = as.numeric(cut2(data$score_final, g=numBins))
-  gini <- getGini(data$response, data$predicted)
-
-  
-  act <- data.frame(scoreBin=0, stat=0, count=0, description='Actual Gains', stat.per=0, cum.count=0, s.per=0)
-  actual <- data %>%
-    group_by(scoreBin) %>%
-    summarise(stat = sum(response),
-              count=n(),
-              description='Actual Gains'
-    ) %>%
-    mutate(stat.per=(cumsum(stat)/s), cum.count=(cumsum(count)/n), s.per=stat.per/cum.count)
-  
- 
-  actual$scoreBin <- actual$scoreBin*0.1
-  actual <- rbind(act,actual)
-
-
-  data$scoreBin <- ntile(data$response, 100)
-# Calculate predicted and realized probability data
-  pr <- data %>%
-    group_by(scoreBin) %>%
-    summarise(stat = sum(response),
-              count=n(),
-              description='Actual Gains'
-    ) %>%
-    mutate(stat.per=(cumsum(stat)/s), cum.count=(cumsum(count)/n), s.per=stat.per/cum.count)
-  pr <- rbind(act,pr)
-  pr$scoreBin <- pr$scoreBin*0.01
-  #liftChart <<- rbind(predicted, actual)
-  #print(actual)
-  #print(s)
-
-  #print(pr)
-  # Graph gains chart
-  ggplot(actual, aes(x=scoreBin, y=stat.per)) +
-    #geom_bar(position='dodge', stat='identity') +
-    geom_line(data=pr, color="red")+
-    geom_polygon() + geom_abline(intercept=0,slope=1,color="red") +
-    #scale_fill_brewer(palette="Set1") +
-    ggtitle('Gini Chart\n') +
-    xlab('\nCumulative % of Policies ordered by Predicted\n') +
-    ylab('Cumulative % of Losses\n') +
-    scale_x_continuous(breaks=seq(0,1,by=0.1), labels=percent) +
-    scale_y_continuous(breaks=seq(0,1,by=0.2), labels=percent) +
-    theme_bw() +
-    theme(plot.title = element_text(size=20)) +
-    theme(axis.title.x = element_text(size=18)) +
-    theme(axis.title.y = element_text(size=18)) +
-    theme(axis.text.x = element_text(size=14)) +
-    theme(axis.text.y = element_text(size=14)) 
-   
-}
-
-############################################################################################################ 
-# Plots Cumulative Gains Chart
-
-plotCumGainsChart <- function(data, response, predicted, numBins=10, cap=TRUE, cap_pct=0) {
-  # Requires dplyr
-  data$response <- data[, response]  
-  data$predicted <- data[, predicted]
-  
-  # Cap score if cap=TRUE
-  if (cap) { 
-    data$predicted[data$predicted > quantile(data$predicted, 1-cap_pct)] = quantile(data$predicted, 1-cap_pct);  # Cap predicted loss ratios
-  }
-  
-  s <- sum(data$response)
-  n <- length(data$response)
-  # Bin the data into 10 bins
-  data$scoreBin <- ntile(data$predicted, numBins)
-  #data$scoreBin = as.numeric(cut2(data$score_final, g=numBins))
-  gini <- getGini(data$response, data$predicted)
-  
-  act <- data.frame(scoreBin=0, stat=0, count=0, description='Actual Gains', stat.per=0, cum.count=0, s.per=0)
-  actual <- data %>%
-    group_by(scoreBin) %>%
-    summarise(stat = sum(response),
-              count=n(),
-              description='Actual Gains'
-    ) %>%
-    mutate(stat.per=(cumsum(stat)/s), cum.count=(cumsum(count)/n), s.per=stat.per/cum.count)
-  
-  actual$scoreBin <- actual$scoreBin*0.1
-  actual <- rbind(act,actual)
-  #liftChart <<- rbind(predicted, actual)
-  #print(actual)
-  #print(s)
-  # Graph gains chart
-  data$scoreBin <- ntile(data$response, 100)
-  pr <- data %>%
-    group_by(scoreBin) %>%
-    summarise(stat = sum(response),
-              count=n(),
-              description='Actual Gains'
-    ) %>%
-    mutate(stat.per=(cumsum(stat)/s), cum.count=(cumsum(count)/n), s.per=stat.per/cum.count)
-  pr <- rbind(act,pr)
-  pr$scoreBin <- pr$scoreBin*0.01
-  
-  ggplot(actual, aes(x=scoreBin, y=s.per)) +
-    #geom_bar(position='dodge', stat='identity') +
-    geom_line(data=pr, color="red") +
-    geom_polygon() + geom_abline(intercept=0,slope=1,color="red") +
-    #scale_fill_brewer(palette="Set1") +
-    ggtitle('Cumulative Gains Chart\n') +
-    xlab('\nCumulative % of Policies ordered by Predicted\n') +
-    ylab('Cumulative % of XS Losses\n') +
-    scale_x_continuous(breaks=seq(0,1,by=0.1), labels=percent) +
-    scale_y_continuous(breaks=seq(0,1,by=0.2), labels=percent) +
-    theme_bw() +
-    theme(plot.title = element_text(size=20)) +
-    theme(axis.title.x = element_text(size=18)) +
-    theme(axis.title.y = element_text(size=18)) +
-    theme(axis.text.x = element_text(size=14)) +
-    theme(axis.text.y = element_text(size=14)) 
-  #+
-  # geom_text(data = TextFrame,aes(x = X, y = Y, label = LAB), size = 4)
-  #print(pr)
-  #print(actual)
-}
- 
-############################################################################################################
-# Returns common descriptive stats for datasets
+# Returns common descriptive stats for datasets ---------------------------------
 getSummaryStats <- function(data, varList, yvar, sortMissing=FALSE, export=FALSE) {
   dataName <- deparse(substitute(data))
   
@@ -814,7 +578,6 @@ getSummaryStats <- function(data, varList, yvar, sortMissing=FALSE, export=FALSE
 }
  
 
-############################################################################################################
 # Finds frequency counts for factors (characters and integers with less than 20 unique values)
 getFactorFreqs <- function(data, varList, yvar, export=FALSE) {
   # requires dplyr
@@ -870,82 +633,7 @@ getFactorFreqs <- function(data, varList, yvar, export=FALSE) {
 }
 
 
-############################################################################################################
 # Get count and avg responses for factor variables (a.ka. Leave one-out experience variables)
-# getOneWayVars <- function(train, test, varList, yvar, freq=TRUE, cred=0, rand=0) {
-#   # freq=TRUE when you want the factor counts; set cred > 0 for credibility adjustment; rand > 0 for random shocking
-#   # Requires dplyr
-#   
-#   len <- length(varList)
-#   rowNumCheck.train <- nrow(train)
-#   rowNumCheck.test <- nrow(test)
-#   
-#   train$responseVar <- train[, yvar]
-#   total_avg_response <- mean(train$responseVar, na.rm=TRUE)  # Fixed only for this contest
-#   
-#   for (i in 1:len) {
-#     train$groupingVar <- train[, varList[i]]
-#     test$groupingVar <- test[, varList[i]]   
-#     
-#     df <- train %>%
-#       group_by(groupingVar) %>%
-#       summarise(
-#         freq = n() - 1,
-#         YRate = mean(responseVar, na.rm=TRUE)
-#       ) %>% ungroup()
-#     
-#     train <- left_join(train, df, by='groupingVar')
-#     
-#     train_tmp <- unique(train[, c('groupingVar', 'freq', 'YRate')])
-#     test <- left_join(test, train_tmp, by='groupingVar')
-#     names(test)[which(names(test)=='freq')] <- 'dummyFreq'
-#     names(test)[which(names(test)=='YRate')] <- 'dummyRate'
-#     test$dummyFreq <- test$dummyFreq + 1
-#     test$dummyFreq[is.na(test$dummyFreq)] <- 0
-#     
-#     ids <- which(is.na(test$dummyRate))
-#     test$dummyRate[ids] <- total_avg_response
-#     test$dummyRate[-ids] <- (test$dummyRate[-ids] + (total_avg_response * cred / test$dummyFreq[-ids])) * (test$dummyFreq[-ids] / (test$dummyFreq[-ids] + cred))
-#     
-#     if (freq) {
-#       names(test)[which(names(test)=='dummyFreq')] <- paste(varList[i], '_freq', sep='')  
-#     } else {
-#       id <- which(names(test)=='dummyFreq')
-#       test[, id] <- NULL
-#     }
-#     
-#     names(test)[which(names(test)=='dummyRate')] <- paste(varList[i], '_', yvar, 'Rate', sep='')
-#     
-#     # Leave one out adjustment for train data
-#     train$YRate <- (train$YRate - (train$responseVar / (train$freq+1))) * (train$freq+1)/(train$freq)
-#     train$YRate <- (train$YRate + (total_avg_response * cred / train$freq)) * (train$freq / (train$freq + cred))
-#     train$YRate[train$freq == 0] <- total_avg_response
-#     set.seed(10)
-#     train$YRate <- train$YRate * (1+(runif(nrow(train))-0.5) * rand)
-#     
-#     if (freq) {
-#       names(train)[which(names(train)=='freq')] <- paste(varList[i], '_freq', sep='')
-#     } else {
-#       id <- which(names(train)=='freq')
-#       train[, id] <- NULL
-#     }
-#     
-#     names(train)[which(names(train)=='YRate')] <- paste(varList[i], '_', yvar, 'Rate', sep='')
-#     
-#     train$groupingVar <- NULL;
-#     test$groupingVar <- NULL;
-#   }
-#   
-#   train$responseVar <- NULL; train$groupingVar <- NULL; test$groupingVar <- NULL;
-#   
-#   if(nrow(train) != rowNumCheck.train) print('Error: Different number of rows in train data. Bad join!')
-#   
-#   if(nrow(test) != rowNumCheck.test) print('Error: Different number of rows in test data. Bad join!')
-#   
-#   test <<- test
-#   return(train)
-# }
-
 getOneWayVars <- function(train, test, varList, yvar, freq=TRUE, cred=0, rand=0) {
   # freq=TRUE when you want the factor counts; set cred > 0 for credibility adjustment; rand > 0 for random shocking
   # Requires dplyr
@@ -1089,90 +777,6 @@ getOneWayVars <- function(train, test, varList, yvar, freq=TRUE, cred=0, rand=0)
 #   }
 #   
 #   train$responseVar <- NULL; train$groupingVar <- NULL; test$groupingVar <- NULL;
-#   
-#   if(nrow(train) != rowNumCheck.train) print('Error: Different number of rows in train data. Bad join!')
-#   
-#   if(nrow(test) != rowNumCheck.test) print('Error: Different number of rows in test data. Bad join!')
-#   
-#   test <<- test
-#   return(train)
-# }
-
-
-
-# getOneWayVars <- function(train, test, varList, yvar, freq=TRUE, cred=0, rand=0) {
-#   # freq=TRUE when you want the factor counts; set cred > 0 for credibility adjustment; rand > 0 for random shocking
-#   # Requires dplyr
-#   
-#   len <- length(varList)
-#   rowNumCheck.train <- nrow(train)
-#   rowNumCheck.test <- nrow(test)
-#   
-#   train$responseVar <- train[, yvar]
-#   total_avg_response <- mean(train$responseVar, na.rm=TRUE)  # Fixed only for this contest
-#   
-#   for (i in 1:len) {
-#     train$groupingVar <- train[, varList[i]]
-#     test$groupingVar <- test[, varList[i]]   
-#     
-#     df <- train %>%
-#       group_by(groupingVar) %>%
-#       summarise(
-#         freq = n() - 1,
-#         YRate = mean(responseVar, na.rm=TRUE)
-#       ) %>% ungroup()
-#     
-#     train_all <<- rbind.fill(train, test)
-#     df_all <- train_all %>%
-#       group_by(groupingVar) %>%
-#       summarise(
-#         freq_all = n() - 1
-#       ) %>% ungroup()
-#    
-#     train <- left_join(train, df, by='groupingVar')
-#     train <- left_join(train, df_all, by='groupingVar')
-#     
-#     train_tmp <- unique(train[, c('groupingVar', 'freq', 'freq_all', 'YRate')])
-#     test <- left_join(test, train_tmp, by='groupingVar')
-#     names(test)[which(names(test)=='freq_all')] <- 'dummyFreq'
-#     names(test)[which(names(test)=='YRate')] <- 'dummyRate'
-#     test$dummyFreq <- test$dummyFreq + 1
-#     test$dummyFreq[is.na(test$dummyFreq)] <- 0
-#     
-#     ids <- which(is.na(test$dummyRate))
-#     test$dummyRate[ids] <- total_avg_response
-#     test$dummyRate[-ids] <- (test$dummyRate[-ids] + (total_avg_response * cred / test$dummyFreq[-ids])) * (test$dummyFreq[-ids] / (test$dummyFreq[-ids] + cred))
-#     
-#     if (freq) {
-#       names(test)[which(names(test)=='dummyFreq')] <- paste(varList[i], '_freq', sep='')  
-#     } else {
-#       id <- which(names(test)=='dummyFreq')
-#       test[, id] <- NULL
-#     }
-#     
-#     names(test)[which(names(test)=='dummyRate')] <- paste(varList[i], '_', yvar, 'Rate', sep='')
-#     
-#     # Leave one out adjustment for train data
-#     train$YRate <- (train$YRate - (train$responseVar / (train$freq+1))) * (train$freq+1)/(train$freq)
-#     train$YRate <- (train$YRate + (total_avg_response * cred / train$freq)) * (train$freq / (train$freq + cred))
-#     train$YRate[train$freq == 0] <- total_avg_response
-#     set.seed(10)
-#     train$YRate <- train$YRate * (1+(runif(nrow(train))-0.5) * rand)
-#     
-#     if (freq) {
-#       names(train)[which(names(train)=='freq_all')] <- paste(varList[i], '_freq', sep='')
-#     } else {
-#       id <- which(names(train)=='freq')
-#       train[, id] <- NULL
-#     }
-#     
-#     names(train)[which(names(train)=='YRate')] <- paste(varList[i], '_', yvar, 'Rate', sep='')
-#     
-#     train$groupingVar <- NULL; train$freq <- NULL
-#     test$groupingVar <- NULL; test$freq <- NULL
-#   }
-#   
-#   train$responseVar <- NULL; train$groupingVar <- NULL; test$groupingVar <- NULL; train$freq <- NULL; test$freq <- NULL
 #   
 #   if(nrow(train) != rowNumCheck.train) print('Error: Different number of rows in train data. Bad join!')
 #   
@@ -1331,92 +935,13 @@ getOneWayVars_retTest <- function(train, test, varList, yvar, freq=TRUE, cred=0,
 }
 
 
-
-############################################################################################################
-# Changes class type of variables
+# Changes class type of variables --------------------------------------------------------
 makeFactor <- function(data, varList) {
   for (i in varList) {
     data[, i] <- as.factor(data[, i])
   }
   
   return(data)
-}
-
-
-
-############################################################################################################
-# Puts multiple ggplots on same page
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  
-  require(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols)) 
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])  
-  } else {
-    # Set up the page
-    grid.newpage() 
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,                              
-                                      layout.pos.col = matchidx$col))     
-    }  
-  }
-}
-
-
-Evaluate<-function(actual,predicted){
-  print(paste0("Normalized Gini: ", getNormalizedGini(actual,predicted)))
-  print(paste0("R-squared: ", caret::R2(predicted,actual)))
-  print(paste0("Mae: ", mae(actual,predicted)))
-  print(paste0("Min of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(0))))
-  print(paste0("5th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.05))))
-  print(paste0("10th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.1))))
-  print(paste0("25th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.25))))
-  print(paste0("Median of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.5))))
-  print(paste0("75th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.75))))
-  print(paste0("90th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.9))))
-  print(paste0("95th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.95))))
-  print(paste0("98th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.98))))
-  print(paste0("99th Percentile of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(.99))))
-  print(paste0("Max of abs. Residuals: ", quantile(abs(actual-predicted),probs=c(1))))
-  
-  
-  par(mfrow=c(1,2))
-  plot(actual,predicted)
-  abline(0,1,col='red')
-  plot(predicted,actual-predicted)
-  abline(0,0,col='red')
-  
-}
-
-
-mScale<-function(array){
-  x<-(array-min(array))/(max(array)-min(array))
-  return(x)
-}
-
-mScaleTest<-function(array,min,max){
-  x<-(array-min)/(max-min)
-  return(x)
 }
 
 
@@ -1436,8 +961,7 @@ imputeWithMean <- function(data, vars) {
 }
 
 
-############################################################################################################
-# For response vs. x-variable decile plots (can only do one variable at a time)
+# For response vs. x-variable decile plots (can only do one variable at a time) ------------------------------
 getUnivariatePlots <- function(data, bins=10, xvar, yvar, facet=NULL) {
   # Requires ggplot2, Hmisc, dplyr, lubridate
   
@@ -1491,8 +1015,7 @@ getUnivariatePlots <- function(data, bins=10, xvar, yvar, facet=NULL) {
 }
 
 
-############################################################################################################
-# Creates histograms of variables
+# Creates histograms of variables ------------------------------
 plotHistogram <- function(data, varList) {
   # Requires ggplot2
   
@@ -1556,13 +1079,10 @@ plotHistogram <- function(data, varList) {
 }
 
 
-############################################################################################################
-# Calculates percentile
+# Calculates percentile ------------------------------
 percentile <- function(x) rank(x, na.last='keep')/length(which(!is.na(x)))
 
-
-############################################################################################################
-# Changes class type of variables
+# Changes class type of variables ------------------------------
 makeFactor <- function(data, varList) {
   for (i in varList) {
     data[, i] <- as.factor(data[, i])
@@ -1580,103 +1100,7 @@ makeNumeric <- function(data, varList) {
 }
 
 
-############################################################################################################
-# Puts multiple ggplots on same page
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  
-  require(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols)) 
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])  
-  } else {
-    # Set up the page
-    grid.newpage() 
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,                              
-                                      layout.pos.col = matchidx$col))     
-    }  
-  }
-}
-
-
-############################################################################################################
-# Produces score report and graph
-getScoreSummary <- function(test) {
-  # Requires dplyr
-  df <- select(test, res, starts_with('score_'))
-  models <- names(df)[-1]
-  
-  scoreboard <- NULL
-  
-  for (i in models) {
-    auc <- getAUCSummary(df, predicted=i, actual='res', output=FALSE)
-    logloss <- getLogLoss(test, predicted=i, actual='res', output=FALSE)
-    
-    scoreboard <- rbind(scoreboard, data.frame(Model=i, Metric=c('AUC', 'Log Loss'), Value=c(auc, logloss)))
-  }
-  
-  scoreboard_auc <- filter(scoreboard, Metric == 'AUC')
-  scoreboard_auc <- arrange(scoreboard_auc, Metric, desc(Value))
-  scoreboard_ll <- filter(scoreboard, Metric == 'Log Loss')
-  scoreboard_ll <- arrange(scoreboard_ll, Metric, Value)
-  scoreboard <- rbind(scoreboard_auc, scoreboard_ll)
-  View(scoreboard)  
-  
-  # Graph score summary
-  scoreboard_auc$Label <- paste(1:nrow(scoreboard_auc), '. ', scoreboard_auc$Model, sep='')
-  graph1 <- ggplot(scoreboard_auc, aes(x=Label, y=Value)) +
-    geom_point(size=5) +
-    scale_y_continuous(limits=c(0.75, 0.8)) +
-    ggtitle('AUC') +
-    xlab('') +
-    ylab('') +
-    theme(plot.title = element_text(size=40)) +
-    theme(axis.title.x = element_text(size=38)) +
-    theme(axis.title.y = element_text(size=38)) +
-    theme(axis.text.x = element_text(size=30)) +
-    theme(axis.text.y = element_text(size=30)) +
-    coord_flip()
-  
-  scoreboard_ll$Label <- paste(1:nrow(scoreboard_ll), '. ', scoreboard_ll$Model, sep='')
-  graph2 <- ggplot(scoreboard_ll, aes(x=Label, y=Value)) +
-    geom_point(size=5) +
-    scale_y_continuous(limits=c(0.45, 0.65)) +
-    ggtitle('Log Loss') +
-    xlab('') +
-    ylab('') +
-    theme(plot.title = element_text(size=40)) +
-    theme(axis.title.x = element_text(size=38)) +
-    theme(axis.title.y = element_text(size=38)) +
-    theme(axis.text.x = element_text(size=30)) +
-    theme(axis.text.y = element_text(size=30)) +
-    coord_flip()
-  
-  multiplot(graph1, graph2, cols=1)
-  
-  return(scoreboard)
-}
-
-#################### getPDplots_scaled ####################
+# Produces partial dependence plots for gbm models ------------------------------
 getPDplots_scaled <- function(gbmObject, varList, n.trees, trainingData) {
   
   require(gbm); require(ggplot2); require(scales);
@@ -1813,5 +1237,43 @@ getPDplots_scaled_log <- function(gbmObject, varList, n.trees, trainingData) {
       
       multiplot(graph.pd, graph.hist)  
     } 
+  }
+}
+
+
+# Puts multiple ggplots on same page ------------------------------
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  
+  require(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols)) 
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])  
+  } else {
+    # Set up the page
+    grid.newpage() 
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,                              
+                                      layout.pos.col = matchidx$col))     
+    }  
   }
 }

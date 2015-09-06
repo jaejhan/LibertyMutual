@@ -1,5 +1,4 @@
-############################################################################################################
-# Function to run extreme GBM model
+# Function to run extreme GBM model ----------------------------------------------------------
 runXGB <- function(train, test, model, watch, obj, nround, subsample, eta, max_depth, min_child_weight, colsample_bytree, offset, feval, maximize, early.stop.round, nthread=6, alert=TRUE) {
   
   train_predictors <- train[, all.vars(model)[-1]]  # select predictor var columns
@@ -59,13 +58,12 @@ runXGB <- function(train, test, model, watch, obj, nround, subsample, eta, max_d
 }
 
 
-############################################################################################################
-# Function to run GBM model
+# Function to run GBM model ----------------------------------------------------------
 runGBM <- function(train, test, model, var.monotone, distrib, bag, trees, shrnkg, idepth, minobs, alert=TRUE) {
   
   set.seed(1)
     
-  gbmModel <- gbm(formula = model,
+  gbmModel <<- gbm(formula = model,
                   data = train,
                   distribution = distrib, # sets regression loss function
                   bag.fraction = bag,  # introduces robustness and speed
@@ -75,11 +73,11 @@ runGBM <- function(train, test, model, var.monotone, distrib, bag, trees, shrnkg
                   n.minobsinnode = minobs,  # manages smoothness
                   var.monotone = var.monotone,
                   #weights = 
-                  verbose = FALSE,
+                  verbose = TRUE,
                   n.cores = 3)
     
    print(summary(gbmModel, plotit=FALSE))  
-#   #gbm.perf(gbmModel, plot.it=TRUE, oobag.curve=FALSE, overlay=FALSE, method='OOB')
+   #gbm.perf(gbmModel, plot.it=TRUE, oobag.curve=FALSE, overlay=FALSE, method='OOB')
    plotFeatureImportance(gbmModel, method='gbm')
     
   # Score & calculate evaluate metric for in-sample
@@ -91,7 +89,8 @@ runGBM <- function(train, test, model, var.monotone, distrib, bag, trees, shrnkg
   return(gbmModel)
 }
 
-# Function to run Random forest model
+
+# Function to run Random forest model ----------------------------------------------------------
 runRFO <- function(train, test, model, trees, mtry, maxnodes, nodesize, sampsize, replace, alert=TRUE) {
 
   set.seed(2)
@@ -152,8 +151,7 @@ runEXT <- function(train, test, num, model, trees, mtry, nodesize, numRandomCuts
 }
 
 
-############################################################################################################
-# Function to run GLMNET model
+# Function to run GLMNET model ----------------------------------------------------------
 runGNT <- function(train, test, model, family, alpha, lambda.min.ratio, alert=TRUE) {
   
   set.seed(4)
@@ -203,8 +201,7 @@ runGT_parallel <- function(train, test, model, alpha, lambda.min.ratio, alert=TR
 }
 
 
-############################################################################################################
-# Function to tune xgboost model parameters
+# Function to tune xgboost model parameters (no parallelization) ----------------------------------------------------------
 runXgbTuning <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE) {
   
   eval_metric_final <- vector(length=nrow(xgbGrid))
@@ -254,6 +251,9 @@ runXgbTuning <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE) {
       
       train <- getOneWayVars_retTrain(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
       validation <- getOneWayVars_retTest(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=20, rand=0.2)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V8'), 'Hazard', freq=TRUE, cred=20, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V8'), 'Hazard', freq=TRUE, cred=20, rand=0)
       
       
       # Create xgboost class sparse matrices
@@ -312,6 +312,8 @@ runXgbTuning <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE) {
   return(tune_results)
 }
 
+
+# Function to tune xgboost model parameters (with parallelization) ----------------------------------------------------------
 runXgbTuning_par1 <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE, cores=4) {
   
   eval_metric_final <- vector(length=nrow(xgbGrid))
@@ -406,7 +408,7 @@ runXgbTuning_par1 <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE, co
   View(tune_results)
   
   varImp <- as.data.frame(collector[2])
-  getXgbTuningParamPlots(tune_results, varImp)  # Visualize results
+ # getXgbTuningParamPlots(tune_results, varImp)  # Visualize results
   
   varImp <- varImp %>% group_by(var) %>% summarise(avg_importance=mean(importance)) %>% arrange(desc(avg_importance))
   varImp_xgb <<- varImp
@@ -417,6 +419,8 @@ runXgbTuning_par1 <- function(xgbGrid, data, model, obj, cv_fold, alert=TRUE, co
   return(tune_results)
 }
 
+
+# Function to tune xgboost model parameters (with parallelization & # trees tuning) ----------------------------------------------------------
 runXgbTuning_par2 <- function(xgbGrid, data, model, obj, cv_fold, numSteps=0, stepSize, alert=TRUE, cores=4) {
   
   eval_metric_final <- vector(length=nrow(xgbGrid))
@@ -552,9 +556,7 @@ runXgbTuning_par2 <- function(xgbGrid, data, model, obj, cv_fold, numSteps=0, st
 }
 
 
-
-############################################################################################################
-# Function to tune GBM model parameters (manually do cross-validation using specified evaluation metric)
+# Function to tune gbm model parameters (no parallelization) ----------------------------------------------------------
 runGbmTuning <- function(gbmGrid, data, model, var.monotone, distrib, cv_fold, alert=TRUE) {
   
   eval_metric_final <- vector(length=nrow(gbmGrid))
@@ -648,6 +650,8 @@ runGbmTuning <- function(gbmGrid, data, model, var.monotone, distrib, cv_fold, a
   return(tune_results)
 }
 
+
+# Function to tune gbm model parameters (with parallelization) ----------------------------------------------------------
 runGbmTuning_par1 <- function(gbmGrid, data, model, distrib, var.monotone, cv_fold, alert=TRUE, cores=4) {
   
   eval_metric_final <- vector(length=nrow(gbmGrid))
@@ -746,6 +750,8 @@ runGbmTuning_par1 <- function(gbmGrid, data, model, distrib, var.monotone, cv_fo
   return(tune_results)
 }
 
+
+# Function to tune gbm model parameters (with parallelization & # trees tuning) ----------------------------------------------------------
 runGbmTuning_par2 <- function(gbmGrid, data, model, var.monotone, distrib, cv_fold, numSteps=0, stepSize, alert=TRUE, cores=4) {
   
   eval_metric_final <- vector(length=nrow(gbmGrid))
@@ -867,8 +873,7 @@ runGbmTuning_par2 <- function(gbmGrid, data, model, var.monotone, distrib, cv_fo
 }
 
 
-############################################################################################################
-# Function to tune RF model parameters
+# Function to tune random forest model parameters (no parallelization) ----------------------------------------------------------
 runRfTuning <- function(rfGrid, data, model, cv_fold, alert=TRUE) {
   
   eval_metric_final <- vector(length=nrow(rfGrid))
@@ -961,6 +966,7 @@ runRfTuning <- function(rfGrid, data, model, cv_fold, alert=TRUE) {
 }
 
 
+# Function to tune random forest model parameters (with parallelization) ----------------------------------------------------------
 runRfTuning_par1 <- function(rfGrid, data, model, cv_fold, alert=TRUE, cores=4) {
   
   eval_metric_final <- vector(length=nrow(rfGrid))
@@ -1049,8 +1055,7 @@ runRfTuning_par1 <- function(rfGrid, data, model, cv_fold, alert=TRUE, cores=4) 
 }
 
 
-############################################################################################################
-# Function to tune RF model parameters
+# Function to tune glmnet model parameters (no parallelization) ----------------------------------------------------------
 runGntTuning <- function(gntGrid, data, model, family, cv_fold, alert=TRUE) {
   
   eval_metric_final <- vector(length=nrow(gntGrid))
@@ -1077,13 +1082,25 @@ runGntTuning <- function(gntGrid, data, model, family, cv_fold, alert=TRUE) {
       train <- subset(data, !(cv_var %in% j))
       validation <- subset(data, cv_var %in% j)
       
-      train <- getOneWayVars_retTrain(train, validation, c('username'), 'dropped', freq=TRUE, cred=5, rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('username'), 'dropped', freq=TRUE, cred=5, rand=0)
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=0, rand=0)
       
-      train <- getOneWayVars_retTrain(train, validation, c('course_id'), 'dropped', freq=TRUE, cred=40, rand=0.1)
-      validation <- getOneWayVars_retTest(train, validation, c('course_id'), 'dropped', freq=TRUE, cred=40, rand=0.1)
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V5'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V5'), 'Hazard', freq=TRUE, cred=0, rand=0)
       
-
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V12'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V12'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      
+      
       set.seed(4)
       
       glmnetModel <<- cv.glmnet(x = as.matrix(train[, all.vars(model)[-1]]),
@@ -1124,6 +1141,7 @@ runGntTuning <- function(gntGrid, data, model, family, cv_fold, alert=TRUE) {
 }
 
 
+# Function to tune glmnet model parameters (with parallelization) ----------------------------------------------------------
 runGntTuning_par <- function(gntGrid, data, model, family, cv_fold, alert=TRUE, cores=4) {
   
   eval_metric_final <- vector(length=nrow(gntGrid))
@@ -1143,30 +1161,25 @@ runGntTuning_par <- function(gntGrid, data, model, family, cv_fold, alert=TRUE, 
       train <- subset(data, !(cv_var %in% j))
       validation <- subset(data, cv_var %in% j)
       
-      train <- getOneWayVars_retTrain(train, validation, c('T1_V8'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T1_V8'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
       
-      train <- getOneWayVars_retTrain(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=0, rand=0)
       
-      train <- getOneWayVars_retTrain(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T1_V11'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V5'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V5'), 'Hazard', freq=TRUE, cred=0, rand=0)
       
-      train <- getOneWayVars_retTrain(train, validation, c('T1_V12'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T1_V12'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V12'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V12'), 'Hazard', freq=TRUE, cred=0, rand=0)
       
-      train <- getOneWayVars_retTrain(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T1_V4'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V16'), 'Hazard', freq=TRUE, cred=0, rand=0)
       
-      train <- getOneWayVars_retTrain(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V15'), 'Hazard', freq=TRUE, cred=0, rand=0)
       
-      train <- getOneWayVars_retTrain(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      
-      train <- getOneWayVars_retTrain(train, validation, c('T2_V12'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      validation <- getOneWayVars_retTest(train, validation, c('T2_V12'), 'Hazard', freq=TRUE, cred=gbmGrid$cred_T1_V8[i], rand=0)
-      
+      train <- getOneWayVars_retTrain(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=0, rand=0)
+      validation <- getOneWayVars_retTest(train, validation, c('T1_V7'), 'Hazard', freq=TRUE, cred=0, rand=0)
+     
       set.seed(4)
       
       glmnetModel <- cv.glmnet(x = as.matrix(train[, all.vars(model)[-1]]),
@@ -1210,8 +1223,7 @@ runGntTuning_par <- function(gntGrid, data, model, family, cv_fold, alert=TRUE, 
 }
 
 
-############################################################################################################
-# Function to tune ET model parameters
+# Function to tune extra trees model parameters (with parallelization) ----------------------------------------------------------
 runEtTuning <- function(etGrid, data, model, cv_fold, alert=TRUE) {
   
   eval_metric_final <- vector(length=nrow(etGrid))
@@ -1288,6 +1300,7 @@ runEtTuning <- function(etGrid, data, model, cv_fold, alert=TRUE) {
 }
 
 
+# Function to tune extra trees model parameters (with parallelization) ----------------------------------------------------------
 runEtTuning_par <- function(etGrid, data, model, cv_fold, alert=TRUE, cores=4) {
   
   eval_metric_final <- vector(length=nrow(etGrid))
@@ -1378,11 +1391,9 @@ runEtTuning_par <- function(etGrid, data, model, cv_fold, alert=TRUE, cores=4) {
 }
 
 
-############################################################################################################
-# Plots results for Xgboost tuning (requires ggplot2 & dplyr)
+# Plots results for xgboost tuning (requires ggplot2 & dplyr) ------------------------------
 getXgbTuningParamPlots <- function(data, data2) { 
   
-  #data$eval.metric <- data$eval_metric_final
   data$eval.metric <- data$eval_metric_final  
   
   # See which trees performed best
@@ -1521,15 +1532,13 @@ getXgbTuningParamPlots <- function(data, data2) {
     ggtitle("Xgboost Avg Feature Importance\n") +
     theme(plot.title=element_text(size=18)) 
   
-  #multiplot(Nround, Subsample, Max.depth, cols=2) 
   multiplot(Nround, Subsample, Eta, Max.depth, cols=2) 
   multiplot(Min.child.weight, Colsample_bytree, Importance, cols=2) 
   multiplot(featureImportance, cols=1)
 }
 
 
-############################################################################################################
-# Plots results for GBM tuning (requires ggplot2 & dplyr)
+# Plots results for gbm tuning (requires ggplot2 & dplyr) ------------------------------
 getGbmTuningParamPlots <- function(data, data2) {  
   
   data$eval.metric <- data$eval_metric_final
@@ -1542,7 +1551,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     ) 
   
   shrinkage <- ggplot() +
-    geom_point(data=data, aes(x=shrinkage, y=eval.metric), alpha=0.33) + 
+    geom_point(data=data, aes(x=shrinkage, y=eval.metric)) + 
     geom_point(data=summShrinkage, aes(x=shrinkage, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$shrinkage)) +
     ggtitle('Shrinkage vs. eval metric\n(Median values in bold)') +
@@ -1560,7 +1569,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   Trees <- ggplot() +
-    geom_point(data=data, aes(x=trees, y=eval.metric), alpha=0.33) +
+    geom_point(data=data, aes(x=trees, y=eval.metric)) +
     geom_point(data=summTrees, aes(x=trees, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$trees)) +
     ggtitle('Trees vs. eval metric\n(Median values in bold)') +
@@ -1578,7 +1587,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   intDepth <- ggplot() +
-    geom_point(data=data, aes(x=interaction.depth, y=eval.metric), alpha=0.33) +
+    geom_point(data=data, aes(x=interaction.depth, y=eval.metric)) +
     geom_point(data=summIntDepth, aes(x=interaction.depth, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$interaction.depth)) +
     ggtitle('Interaction depth vs. eval metric\n(Median values in bold)') +
@@ -1596,7 +1605,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   obsNodes <- ggplot() +  
-    geom_point(data=data, aes(x=n.minobsinnode, y=eval.metric), alpha=0.33) + 
+    geom_point(data=data, aes(x=n.minobsinnode, y=eval.metric)) + 
     geom_point(data=summMinobs, aes(x=n.minobsinnode, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$n.minobsinnode)) + 
     ggtitle('Min Obs in Terminal Nodes vs. eval metric\n(Median values in bold)') +
@@ -1614,7 +1623,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   bagFraction <- ggplot() +  
-    geom_point(data=data, aes(x=bag.fraction, y=eval.metric), alpha=0.33) + 
+    geom_point(data=data, aes(x=bag.fraction, y=eval.metric)) + 
     geom_point(data=summBagfraction, aes(x=bag.fraction, y=medEvalMetric), size=5) +
     scale_x_continuous(breaks=unique(data$bag.fraction)) + 
     ggtitle('Bag fraction vs. eval metric\n(Median values in bold)') +
@@ -1632,7 +1641,7 @@ getGbmTuningParamPlots <- function(data, data2) {
     )
   
   influence <- ggplot() +  
-    geom_point(data=data2, aes(x=var, y=rel.inf), alpha=0.33) + 
+    geom_point(data=data2, aes(x=var, y=rel.inf)) + 
     geom_point(data=summRelinf, aes(x=var, y=medRelInf), size=5) +
     ggtitle('Relative infleunce\n(Median values in bold)') +
     theme(axis.title.x = element_text(size=18)) +
@@ -1657,10 +1666,9 @@ featureImportance <- ggplot(data2, aes(x=reorder(var, avgRelInf), y=avgRelInf)) 
 }
 
 
-############################################################################################################
-# Plots results for Random Forest tuning (requires ggplot2 & dplyr)
+# Plots results for random forest tuning (requires ggplot2 & dplyr) ------------------------------
 getRfTuningParamPlots <- function(data, data2) { 
-  #data$eval.metric <- data$eval_metric_final
+  
   data$eval.metric <- data$eval_metric_final
   
   # See which trees performed best
@@ -1806,13 +1814,10 @@ getRfTuningParamPlots <- function(data, data2) {
 }
 
 
-############################################################################################################
-# Plots results for Extra Trees tuning (requires ggplot2 & dplyr)
+# Plots results for Extra Trees tuning (requires ggplot2 & dplyr) ------------------------------
 getEtTuningParamPlots <- function(data) { 
   
-  #data$eval.metric <- data$eval_metric_final
   data$eval.metric <- data$eval_metric_final
-  
   
   # See which trees performed best
   summTrees <- data %>%
@@ -1891,16 +1896,14 @@ getEtTuningParamPlots <- function(data) {
 }
 
 
-############################################################################################################
-# Plot random forest feature importance
+# Plot feature importance for xgboost, gbm, and random forest ------------------------------
 plotFeatureImportance <- function(modelObj, method, sparse_matrix) {
   
   if (method == 'xgb') { 
     featureImportance <- xgb.importance(sparse_matrix@Dimnames[[2]], model=modelObj)
     print(featureImportance)
     graph <- xgb.plot.importance(importance_matrix=featureImportance)
-  }
-  else if (method == 'gbm') { 
+  } else if (method == 'gbm') { 
   featureImportance <- summary(gbmModel, plotit=FALSE)
   
   graph <- ggplot(featureImportance, aes(x=reorder(var, rel.inf), y=rel.inf)) +
@@ -1911,8 +1914,7 @@ plotFeatureImportance <- function(modelObj, method, sparse_matrix) {
     ylab("") + 
     ggtitle("GBM Avg Relative Influence\n") +
     theme(plot.title=element_text(size=18))
-  }
-  else if (method == 'rfo') {
+  } else if (method == 'rfo') {
     imp <- importance(modelObj, type=1)  # either 1 or 2, specifying the type of importance measure (1=mean decrease in accuracy, 2=mean decrease in node impurity).
     featureImportance <- data.frame(feature=row.names(imp), importance=imp[, 1])
     
@@ -1930,8 +1932,7 @@ plotFeatureImportance <- function(modelObj, method, sparse_matrix) {
 }
 
 
-############################################################################################################
-# Exports submission file and final test dataset
+# Exports submission file and final test dataset ------------------------------
 exportSubmission <- function(data, num, cols, replace) {
   # requires dplyr
   
@@ -1940,4 +1941,3 @@ exportSubmission <- function(data, num, cols, replace) {
   
   write.csv(sub, paste('submissions/submission', num, '.csv', sep=''), row.names=FALSE)  
 }
-
