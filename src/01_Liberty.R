@@ -242,9 +242,8 @@ test$score_rfo <- predict(rfoModel_log, test, type='response')
 test$score_xgb <- predict(xgbModel_01, xgb.DMatrix(data=sparse.model.matrix(~., data = test[, all.vars(e03)[-1]])))
 
 
-test$score_ensemble <- (0.4 * test$score_gbm) + 
-                       (0.3 * test$score_rfo) +
-                       (0.3 * test$score_xgb) 
+test$score_ensemble <- (0.6 * test$score_gbm) + 
+                       (0.4 * test$score_xgb) 
 
 
 # Export submission file --------------------------------------------------------------------
